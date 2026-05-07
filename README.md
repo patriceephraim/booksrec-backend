@@ -15,6 +15,15 @@ Most "ChatGPT wrapper" projects parse free-text LLM responses with regex and pra
 - **Service layer isolation** — only `ai_service.py` knows Claude exists. Swapping providers, mocking for tests, or adding caching all happen in one file.
 - **Async end-to-end** — non-blocking I/O so the server handles many concurrent users while waiting on Claude.
 
+## Architecture
+
+```mermaid
+flowchart TD
+    A[HTTP Client<br/>Next.js or curl] -->|POST /api/recommend| B[FastAPI main.py<br/>Validates input via Pydantic<br/>Translates exceptions to HTTP codes]
+    B -->|recommend_books quiz| C[AI Service<br/>Builds prompt + tool schema<br/>Calls Claude async<br/>Validates output, retries once]
+    C -->|Anthropic API| D[Claude<br/>claude-haiku-4-5]
+```
+
 ## Tech stack
 
 - **Python 3.11+**
@@ -26,7 +35,7 @@ Most "ChatGPT wrapper" projects parse free-text LLM responses with regex and pra
 ## Run it locally
 
 ```bash
-git clone https://github.com/java-lover30/booksrec-backend.git
+git clone https://github.com/patriceephraim/booksrec-backend.git
 cd booksrec-backend
 
 python3 -m venv venv
@@ -68,6 +77,20 @@ Returns 3–5 personalized book recommendations, each with a `why_recommended` f
 | GET    | `/redoc`          | ReDoc UI (alternative documentation renderer). |
 
 ## Project structure
+
+```
+booksrec-backend/
+  app/
+    __init__.py
+    main.py          # FastAPI routes — does NOT import anthropic
+    models.py        # Pydantic schemas (input + output validation)
+    ai_service.py    # The ONLY module that talks to Claude
+    config.py        # Env-var loading, fail-fast on missing keys
+  .env.example
+  .gitignore
+  requirements.txt
+  README.md
+```
 
 ## What I learned building this
 
