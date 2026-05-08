@@ -48,3 +48,15 @@ def list_saved_books(user_id: str) -> list[dict]:
         .execute()
     )
     return response.data
+
+
+def delete_saved_book(user_id: str, book_id: str) -> bool:
+    """Delete a saved book scoped to the user. Returns True if a row was deleted."""
+    response = (
+        _client.table("saved_books")
+        .delete()
+        .eq("user_id", user_id)
+        .eq("id", book_id)
+        .execute()
+    )
+    return len(response.data) > 0

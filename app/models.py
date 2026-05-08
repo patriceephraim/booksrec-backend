@@ -15,9 +15,7 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-# Enums 
-# Enums lock down valid values. The user cannot send "magical realism" as
-# a genre — it has to be one of these exact strings, or Pydantic rejects it.
+# Enums
 
 class Genre(str, Enum):
     fiction = "fiction"
@@ -47,21 +45,28 @@ class LengthPreference(str, Enum):
     no_preference = "no_preference"
 
 
-# Input model 
+# Input model
 
 class QuizAnswers(BaseModel):
     """What the user submits from the quiz."""
 
     favorite_books: list[str] = Field(
-        ...,
-        min_length=1,
+        default_factory=list,
         max_length=5,
-        description="1 to 5 books the user has loved.",
+        description="0 to 5 books the user has loved (optional).",
     )
     preferred_genres: list[Genre] = Field(
         ...,
         min_length=1,
         description="At least one preferred genre.",
+    )
+    themes: list[str] = Field(
+        default_factory=list,
+        description="Optional themes the user is interested in.",
+    )
+    reading_style: str = Field(
+        default="no_preference",
+        description="character_driven, plot_driven, or no_preference.",
     )
     mood: Mood
     length_preference: LengthPreference
@@ -71,7 +76,7 @@ class QuizAnswers(BaseModel):
     )
 
 
-# Output models 
+# Output models
 
 class BookRecommendation(BaseModel):
     """One recommended book."""

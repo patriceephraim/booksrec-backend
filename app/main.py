@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.ai_service import AIServiceError, recommend_books
 from app.auth import get_current_user
-from app.database import list_saved_books, save_book
+from app.database import delete_saved_book, list_saved_books, save_book
 from app.models import BookRecommendation, QuizAnswers, RecommendationResponse
 
 logging.basicConfig(level=logging.INFO)
@@ -37,7 +37,7 @@ app.add_middleware(
 )
 
 
-# --- Public endpoints ------------------------------------------------------
+#  Public endpoints 
 
 @app.get("/api/health")
 async def health() -> dict[str, str]:
@@ -82,3 +82,15 @@ async def saved(user_id: str = Depends(get_current_user)) -> dict:
     """List all books saved by the current user."""
     books = list_saved_books(user_id=user_id)
     return {"books": books}
+
+
+@app.delete("/api/saved/{book_id}")
+async def delete_saved(
+    book_id: str,
+    user_id: str = Depends(get_current_user),
+) -> dict:
+    """Remove a saved book from the current user's list."""
+    deleted = delete_saved_book(user_id=user_id, book_id=book_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Book not found")
+    return {"deleted": book_id}
