@@ -2,7 +2,7 @@
 
 > AI-powered book recommendation API. Async FastAPI backend using Anthropic's Claude with tool-calling for guaranteed structured output, Pydantic validation, and retry-on-failure logic.
 
-This is the backend half of **BooksRec**, a book recommendation app I'm building over Day 1–7 of a focused AI development sprint. The frontend (Next.js + Clerk auth) lives in a separate repo, coming soon.
+This is the backend half of BooksRec. The frontend (Next.js + Clerk) lives at [patriceephraim/booksrec-frontend](https://github.com/patriceephraim/booksrec-frontend). Try the live app at **https://booksrec-frontend.vercel.app**.
 
 ---
 
@@ -19,9 +19,12 @@ Most "ChatGPT wrapper" projects parse free-text LLM responses with regex and pra
 
 ```mermaid
 flowchart TD
-    A[HTTP Client<br/>Next.js or curl] -->|POST /api/recommend| B[FastAPI main.py<br/>Validates input via Pydantic<br/>Translates exceptions to HTTP codes]
+    A[Next.js Frontend<br/>Clerk JWT in Authorization header] -->|POST /api/recommend| B[FastAPI main.py<br/>Validates input via Pydantic<br/>Translates exceptions to HTTP codes]
     B -->|recommend_books quiz| C[AI Service<br/>Builds prompt + tool schema<br/>Calls Claude async<br/>Validates output, retries once]
     C -->|Anthropic API| D[Claude<br/>claude-haiku-4-5]
+    B -->|save_book user_id, book| E[Database<br/>Supabase Postgres<br/>RLS bypassed via service-role key]
+    A -->|Bearer JWT| F[auth.py<br/>JWKS verification<br/>extracts user_id from sub claim]
+    F -.->|user_id| B
 ```
 
 ## Tech stack
@@ -69,12 +72,16 @@ Returns 3–5 personalized book recommendations, each with a `why_recommended` f
 
 ## API endpoints
 
-| Method | Path              | Description                                    |
-|--------|-------------------|------------------------------------------------|
-| GET    | `/api/health`     | Liveness check. Returns `{"status": "ok"}`.    |
-| POST   | `/api/recommend`  | Quiz answers → book recommendations.           |
-| GET    | `/docs`           | Swagger UI (auto-generated from Pydantic).     |
-| GET    | `/redoc`          | ReDoc UI (alternative documentation renderer). |
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/api/health` | No | Liveness check |
+| POST | `/api/recommend` | No | Quiz answers → book recommendations |
+| GET | `/api/me` | Yes | Returns the authenticated user's Clerk ID |
+| POST | `/api/save` | Yes | Save a book to the user's list |
+| GET | `/api/saved` | Yes | List saved books for the current user |
+| DELETE | `/api/saved/{id}` | Yes | Remove a saved book |
+| GET | `/docs` | No | Swagger UI |
+| GET | `/redoc` | No | ReDoc UI |
 
 ## Project structure
 
